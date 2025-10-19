@@ -1,0 +1,144 @@
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: udc_traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "${WEB_PORT:-8000}:80"
+      - "${DASHBOARD_PORT:-8080}:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - app_network
+
+  postgres:
+    image: postgres:15
+    container_name: udc_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-udc_db_develop}
+      POSTGRES_USER: ${DB_USER:-udc_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-S3cret}
+    volumes:
+      - ./volumes/postgres/data:/var/lib/postgresql/data
+      - ./init/backup.dump:/docker-entrypoint-initdb.d/backup.dump
+      - ./init/restore.sh:/docker-entrypoint-initdb.d/restore.sh
+    expose:
+      - "5432"
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-udc_user} -d ${DB_NAME:-udc_db_develop}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: udc_mosquitto
+    restart: unless-stopped
+    expose:
+      - "1883"
+      - "9001"
+    ports:
+      - "1883:1883"
+    volumes:
+      - "./volumes/mosquitto/config:/mosquitto/config"
+      - "./volumes/mosquitto/data:/mosquitto/data"
+      - "./volumes/mosquitto/log:/mosquitto/log"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mqtt.rule=(Host(`localhost`) || Host(`127.0.0.1`) || Host(`${DOMAIN:-localhost}`)) && PathPrefix(`/mqtt`)"
+      - "traefik.http.routers.mqtt.entrypoints=web"
+      - "traefik.http.routers.mqtt.priority=3"
+      - "traefik.http.services.mqtt.loadbalancer.server.port=9001"
+    networks:
+      - app_network
+
+  api:
+    build:
+      context: ./udc_backend_flask
+      dockerfile: Dockerfile
+    container_name: udc_api
+    restart: unless-stopped
+    expose:
+      - "5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - FLASK_APP=entrypoint:app
+      - APP_SETTINGS_MODULE=${APP_SETTINGS_MODULE:-config.production}
+      - DB_HOST=${DB_HOST:-udc_postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER:-udc_user}
+      - DB_PASSWORD=${DB_PASSWORD:-S3cret}
+      - DB_NAME=${DB_NAME:-udc_db_develop}
+      - DATABASE_URL=postgresql://${DB_USER:-udc_user}:${DB_PASSWORD:-S3cret}@${DB_HOST:-udc_postgres}:${DB_PORT:-5432}/${DB_NAME:-udc_db_develop}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.api.priority=10"
+      - "traefik.http.services.api.loadbalancer.server.port=5000"
+
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:5000/api/v1/health\")' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./monitoring_app
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: "/api"
+        NEXT_PUBLIC_MQTT: "ws://${DOMAIN:-localhost}/mqtt"
+        NEXT_PUBLIC_MQTT_TOPIC: "aplication/pub/nodo/dato"
+    container_name: udc_frontend
+    restart: unless-stopped
+    expose:
+      - "3000"
+    depends_on:
+      - api
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=/api
+      - NEXT_PUBLIC_MQTT=ws://${DOMAIN:-localhost}/mqtt
+      - NEXT_PUBLIC_MQTT_TOPIC=aplication/pub/nodo/dato
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`) || Host(`127.0.0.1`) || Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.priority=1"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+    name: udc_monitoring_network
+
+volumes:
+  postgres_data:
+    driver: local
+  mosquitto_config:
+    driver: local
+  mosquitto_data:
+    driver: local
+  mosquitto_logs:
+    driver: local

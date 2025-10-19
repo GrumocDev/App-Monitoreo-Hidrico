@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import './fonts/icomoon/style.css';
+
+*{
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+}
+

@@ -1,0 +1,26 @@
+[2025-04-08 05:05:10 +0000] [1] [INFO] Starting gunicorn 22.0.0
+[2025-04-08 05:05:10 +0000] [1] [INFO] Listening at: http://0.0.0.0:5000 (1)
+[2025-04-08 05:05:10 +0000] [1] [INFO] Using worker: sync
+[2025-04-08 05:05:10 +0000] [6] [INFO] Booting worker with pid: 6
+[2025-04-08 05:05:10 +0000] [7] [INFO] Booting worker with pid: 7
+[2025-04-08 05:05:10 +0000] [8] [INFO] Booting worker with pid: 8
+[2025-04-08 05:05:10 +0000] [9] [INFO] Booting worker with pid: 9
+[2025-04-08 05:18:08 +0000] [1] [INFO] Handling signal: term
+[2025-04-08 05:18:08 +0000] [9] [INFO] Worker exiting (pid: 9)
+[2025-04-08 05:18:08 +0000] [6] [INFO] Worker exiting (pid: 6)
+[2025-04-08 05:18:08 +0000] [8] [INFO] Worker exiting (pid: 8)
+[2025-04-08 05:18:08 +0000] [7] [INFO] Worker exiting (pid: 7)
+[2025-04-08 05:18:08 +0000] [1] [INFO] Shutting down: Master
+[2025-04-08 05:31:02 +0000] [1] [INFO] Starting gunicorn 22.0.0
+[2025-04-08 05:31:02 +0000] [1] [INFO] Listening at: http://0.0.0.0:5000 (1)
+[2025-04-08 05:31:02 +0000] [1] [INFO] Using worker: sync
+[2025-04-08 05:31:02 +0000] [7] [INFO] Booting worker with pid: 7
+[2025-04-08 05:31:02 +0000] [8] [INFO] Booting worker with pid: 8
+[2025-04-08 05:31:02 +0000] [9] [INFO] Booting worker with pid: 9
+[2025-04-08 05:31:02 +0000] [10] [INFO] Booting worker with pid: 10
+[2025-04-08 05:48:54 +0000] [1] [INFO] Handling signal: term
+[2025-04-08 05:48:54 +0000] [9] [INFO] Worker exiting (pid: 9)
+[2025-04-08 05:48:54 +0000] [10] [INFO] Worker exiting (pid: 10)
+[2025-04-08 05:48:54 +0000] [8] [INFO] Worker exiting (pid: 8)
+[2025-04-08 05:48:54 +0000] [7] [INFO] Worker exiting (pid: 7)
+[2025-04-08 05:48:54 +0000] [1] [INFO] Shutting down: Master

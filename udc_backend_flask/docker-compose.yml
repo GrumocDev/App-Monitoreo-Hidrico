@@ -1,0 +1,64 @@
+version: '3.8'
+
+networks:
+  udcnet:
+     name: proxy_udc
+  alltime:
+     name: proxy_alltime
+     external: true
+services:
+  postgresUdc:
+    image: postgis/postgis:14-3.4
+    container_name: udc_postgres
+    networks:
+      - udcnet
+    volumes:
+      - dataPostegresSqlUdc:/var/lib/postgresql/data
+      - /home/debian/CUENCAS_BOLIVAR.shp:/usr/CUENCA_BOLIVAR.shp
+    environment:
+      - POSTGRES_PASSWORD=S3cret
+      - POSTGRES_USER=udc_user
+      - POSTGRES_DB=udc_db_develop
+    labels:
+      - "traefik.enable=false"
+  backend:
+    build: .
+    container_name: udc_backend
+    networks:
+      - udcnet
+      - alltime 
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=entrypoint:app
+      - APP_SETTINGS_MODULE=config.develop
+    depends_on:
+      - postgresUdc
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.udcbkn-rtr.entrypoints=web-secure"
+      - "traefik.http.routers.udcbkn-rtr.rule=Host(`udcbackend.alltimetech.com.co`)"
+      ## HTTP Services
+      - "traefik.http.routers.udcbkn-rtr.service=udcbkn-svc"
+      - "traefik.http.services.udcbkn-svc.loadbalancer.server.port=5000"
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: udc_pgadmin
+    networks:
+      - udcnet
+      - alltime
+    environment:
+      PGADMIN_DEFAULT_EMAIL: monitoragua@udc.com
+      PGADMIN_DEFAULT_PASSWORD: udc_2024_@
+    depends_on:
+      - postgresUdc
+    labels:
+      - "traefik.enable=true"
+      ## HTTP Routers
+      - "traefik.http.routers.udcpg-rtr.entrypoints=web-secure"
+      - "traefik.http.routers.udcpg-rtr.rule=Host(`udcpgadmin.alltimetech.com.co`)"
+      ## HTTP Services
+      - "traefik.http.routers.udcpg-rtr.service=udcpg-svc"
+      - "traefik.http.services.udcpg-svc.loadbalancer.server.port=80"
+volumes:
+  dataPostegresSqlUdc:

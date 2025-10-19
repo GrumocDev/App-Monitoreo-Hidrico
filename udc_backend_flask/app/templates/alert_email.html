@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerta de Sistema</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 0 auto;
+            width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333333;
+        }
+        p {
+            color: #555555;
+            font-size: 16px;
+        }
+        .alert-details {
+            margin-top: 20px;
+        }
+        .alert-details p {
+            font-size: 14px;
+            color: #777777;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #999999;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #008CBA;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background-color: #005f73;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>¡Alerta activada en el sistema de Monitoreo de agua!</h1>
+        <p>Hola {{ alerta.usuario.nombres }} {{ alerta.usuario.apellidos }},</p>
+        <p>Se ha detectado una alerta en el sistema de monitoreo del nodo <strong>{{ alerta.nodo.nombre }}</strong>.</p>
+
+        <div class="alert-details">
+            <p><strong>Nombre de la Alerta:</strong> {{ alerta.nombre }}</p>
+            <p><strong>Variable monitoreada:</strong> {{ alerta.variable }}</p>
+            <p><strong>Valor de control:</strong> {{ alerta.control }}</p>
+            <p><strong>Operación:</strong> {{ operaciones[alerta.operacion] }}</p>
+            <p><strong>Valor En Nodo:</strong> {{ valor }}</p>
+        </div>
+
+        <p>Te recomendamos revisar el estado del nodo y tomar las medidas necesarias.</p>
+        <p>Para más detalles, accede a tu panel de control:</p>
+
+        <a href="https://udcwater.com/dashboard" class="btn">Ir al Panel</a>
+
+        <div class="footer">
+            <p>Este es un mensaje automático del sistema de monitoreo de UDC Water.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+version: '3.8'
+
+networks:
+  udcnet:
+     name: proxy_udc
+services:
+  postgresUdc:
+    image: postgres:14-alpine3.19
+    container_name: udc_postgres
+    networks:
+      - udcnet
+    ports:
+      - 5432:5432   
+    volumes:
+      - dataPostegresSqlUdc:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=S3cret
+      - POSTGRES_USER=udc_user
+      - POSTGRES_DB=udc_db_develop
+    labels:
+      - "traefik.enable=false"
+  backend:
+    build: .
+    container_name: udc_backend
+    networks:
+      - udcnet
+    ports:
+      - 80:5000
+    volumes:
+      - ./:/app   
+      - ./logs:/app/logs
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=entrypoint:app
+      - APP_SETTINGS_MODULE=config.default
+    depends_on:
+      - postgresUdc
+    labels:
+      - "traefik.enable=false"
+     
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: udc_pgadmin
+    networks:
+      - udcnet
+    ports:
+      - 8082:80  
+    environment:
+      PGADMIN_DEFAULT_EMAIL: monitoragua@udc.com
+      PGADMIN_DEFAULT_PASSWORD: udc_2024_@
+    depends_on:
+      - postgresUdc
+    labels:
+      - "traefik.enable=false"
+     
+volumes:
+  dataPostegresSqlUdc:

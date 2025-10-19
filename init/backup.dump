@@ -1,0 +1,6 @@
+# Este es un archivo placeholder para backup.dump
+# Cuando tengas un dump real de la base de datos, reemplaza este archivo
+# con el archivo .dump generado por pg_dump
+
+# Por ahora, este archivo permite que el contenedor inicie correctamente
+# sin errores de archivos faltantes
