@@ -1,39 +1,45 @@
-FROM node:18-alpine
+# =============================
+# STAGE 1 - Build
+# =============================
+FROM node:18-alpine AS builder
 
-# Instalar dependencias del sistema
-RUN apk add --no-cache libc6-compat
-
-# Establecer directorio de trabajo
 WORKDIR /app
 
-# Variables de entorno para Next.js
+# Definir variables de entorno (build-time)
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_MQTT
 ARG NEXT_PUBLIC_MQTT_TOPIC
 
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_MQTT=$NEXT_PUBLIC_MQTT
-ENV NEXT_PUBLIC_MQTT_TOPIC=$NEXT_PUBLIC_MQTT_TOPIC
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+    NEXT_PUBLIC_MQTT=$NEXT_PUBLIC_MQTT \
+    NEXT_PUBLIC_MQTT_TOPIC=$NEXT_PUBLIC_MQTT_TOPIC
 
-# Copiar archivos de configuración primero
-COPY package*.json ./
-COPY yarn.lock* ./
-COPY tsconfig.json ./
-COPY next.config.js ./
-COPY tailwind.config.js ./
-COPY postcss.config.js ./
+# Copiar solo los archivos necesarios para instalar dependencias
+COPY package.json yarn.lock ./
 
-# Instalar dependencias
+# Instalar dependencias solo de producción y build
 RUN yarn install --frozen-lockfile
 
-# Copiar código fuente
+# Copiar código fuente y compilar
 COPY . .
-
-# Construir la aplicación
 RUN yarn build
 
-# Exponer puerto
-EXPOSE 3000
+# =============================
+# STAGE 2 - Runtime
+# =============================
+FROM node:18-alpine AS runner
+WORKDIR /app
 
-# Comando de inicio
+ENV NODE_ENV=production
+
+# Copiar solo lo necesario desde la etapa anterior
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/yarn.lock ./yarn.lock
+
+# Instalar solo dependencias necesarias para producción
+RUN yarn install --frozen-lockfile --production --ignore-scripts --prefer-offline
+
+EXPOSE 3000
 CMD ["yarn", "start"]
