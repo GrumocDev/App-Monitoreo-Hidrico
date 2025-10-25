@@ -14,7 +14,29 @@ echo "[INFO] Actualizando sistema..."
 sudo dnf update -y
 
 echo "[INFO] Instalando dependencias necesarias..."
-sudo dnf install -y tar curl wget ca-certificates dnf-plugins-core
+sudo dnf install -y tar wget ca-certificates dnf-plugins-core
+
+# Swap 2GB
+SWAPFILE="/swapfile"
+if [ ! -f "$SWAPFILE" ]; then
+  echo "[INFO] Creando archivo de swap de 2GB..."
+  sudo fallocate -l 2G $SWAPFILE
+  sudo chmod 600 $SWAPFILE
+  sudo mkswap $SWAPFILE
+  sudo swapon $SWAPFILE
+  echo "$SWAPFILE swap swap defaults 0 0" | sudo tee -a /etc/fstab
+  echo "[INFO] Swap de 2GB activado."
+else
+  echo "[INFO] Swap ya existe en $SWAPFILE, se omite creación."
+fi
+
+# Swap de curl
+if rpm -q curl-minimal &> /dev/null; then
+  echo "[INFO] Reemplazando curl-minimal por curl completo..."
+  sudo dnf swap curl-minimal curl -y
+else
+  echo "[INFO] curl completo ya instalado o no es necesario swap."
+fi
 
 echo "[INFO] Verificando si ya existe una instalación previa de Docker..."
 if command_exists docker; then
@@ -77,4 +99,3 @@ echo "   - Buildx: $(docker buildx version 2>/dev/null || echo '(no disponible)'
 echo "======================================================================"
 echo "🔁 Cierra sesión y vuelve a entrar para usar Docker sin sudo."
 echo "======================================================================"
-
